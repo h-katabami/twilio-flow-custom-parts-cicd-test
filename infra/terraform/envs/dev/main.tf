@@ -14,6 +14,41 @@ provider "aws" {
   profile = var.aws_profile
 }
 
+moved {
+  from = aws_iam_role.guidance_lambda
+  to   = module.lambda_role["guidance"].aws_iam_role.this
+}
+
+moved {
+  from = aws_iam_role_policy.guidance_lambda_logs
+  to   = module.lambda_role["guidance"].aws_iam_role_policy.inline[0]
+}
+
+moved {
+  from = aws_lambda_function.guidance
+  to   = module.lambda["guidance"].aws_lambda_function.this
+}
+
+moved {
+  from = aws_s3_bucket.frontend
+  to   = module.frontend_bucket["frontend"].aws_s3_bucket.this
+}
+
+moved {
+  from = aws_s3_bucket_public_access_block.frontend
+  to   = module.frontend_bucket["frontend"].aws_s3_bucket_public_access_block.this
+}
+
+moved {
+  from = aws_s3_bucket_website_configuration.frontend
+  to   = module.frontend_bucket["frontend"].aws_s3_bucket_website_configuration.this
+}
+
+moved {
+  from = aws_s3_bucket_policy.frontend
+  to   = module.frontend_bucket["frontend"].aws_s3_bucket_policy.public_read[0]
+}
+
 module "lambda_role" {
   source   = "../../modules/iam-role"
   for_each = var.lambdas
