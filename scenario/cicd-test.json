@@ -1,0 +1,30 @@
+[
+  {
+    "id": "start",
+    "display_no": "1000",
+    "action": "Record",
+    "branch": {
+      "Next": "会社名認識開始"
+    },
+    "text": "お電話ありがとうございます。ガイダンス案内を開始します。"
+  },
+  {
+    "id": "会社名認識開始",
+    "display_no": "2000",
+    "action": "Grammer",
+    "grammer": "cicd-test/Company",
+    "branch": {
+      "Next": "ご案内"
+    },
+    "text": "会社名をお話しください。"
+  },
+  {
+    "id": "ご案内",
+    "display_no": "3000",
+    "action": "Play",
+    "branch": {
+      "Next": "end"
+    },
+    "text": "ありがとうございます。担当者から折り返しご連絡します。"
+  }
+]

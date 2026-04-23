@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guidance Test</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: linear-gradient(135deg, #f4efe6 0%, #dceaf0 100%);
+      --panel: rgba(255, 255, 255, 0.9);
+      --text: #1e2a32;
+      --accent: #006c67;
+      --border: rgba(30, 42, 50, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(720px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 24px 60px rgba(14, 34, 44, 0.12);
+      backdrop-filter: blur(12px);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 5vw, 42px);
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      line-height: 1.7;
+    }
+
+    form {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 20px;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    pre {
+      margin: 24px 0 0;
+      padding: 20px;
+      border-radius: 16px;
+      background: #0f1f27;
+      color: #d8eff0;
+      overflow: auto;
+      min-height: 140px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Guidance Test App</h1>
+    <p>Lambda に会社名とユースケースを渡して、返却されたガイダンスを確認する最小フロントです。</p>
+    <form id="guidance-form">
+      <label>
+        API URL
+        <input id="api-url" value="https://example.execute-api.ap-northeast-1.amazonaws.com/dev/guidance">
+      </label>
+      <label>
+        Company
+        <input id="company" value="trans-cosmos">
+      </label>
+      <label>
+        Use Case
+        <select id="use-case">
+          <option value="account_lock">account_lock</option>
+          <option value="password_reset">password_reset</option>
+          <option value="general">general</option>
+        </select>
+      </label>
+      <button type="submit">実行</button>
+    </form>
+    <pre id="result">ここにレスポンスを表示します。</pre>
+  </main>
+  <script>
+    const form = document.getElementById("guidance-form");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      result.textContent = "Loading...";
+
+      const apiUrl = document.getElementById("api-url").value;
+      const company = document.getElementById("company").value;
+      const useCase = document.getElementById("use-case").value;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ company, use_case: useCase })
+        });
+        const payload = await response.json();
+        result.textContent = JSON.stringify(payload, null, 2);
+      } catch (error) {
+        result.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

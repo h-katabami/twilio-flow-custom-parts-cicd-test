@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - set -euo pipefail
+      - mkdir -p dist
+      - cp front/index.html dist/index.html
+
+artifacts:
+  base-directory: dist
+  files:
+    - '**/*'

@@ -1,0 +1,6 @@
+project              = "cicd-test"
+environment          = "prod"
+aws_region           = "ap-northeast-1"
+account_id           = "353666332910"
+frontend_bucket_name = "twilio-flow-custom-parts-cicd-test-prod-front-353666332910"
+lambda_function_name = "GuidanceHandler-cicd-test-prod"
