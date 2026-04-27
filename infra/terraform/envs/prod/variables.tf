@@ -67,31 +67,16 @@ variable "lambda_artifact_bucket" {
   type     = string
   default  = null
   nullable = true
-
-  validation {
-    condition     = !var.deploy_lambda || (var.lambda_artifact_bucket != null && length(trimspace(var.lambda_artifact_bucket)) > 0)
-    error_message = "lambda_artifact_bucket must be provided by the CI/CD pipeline."
-  }
 }
 
 variable "lambda_artifact_key" {
   type     = string
   default  = null
   nullable = true
-
-  validation {
-    condition     = !var.deploy_lambda || (var.lambda_artifact_key != null && length(trimspace(var.lambda_artifact_key)) > 0)
-    error_message = "lambda_artifact_key must be provided by the CI/CD pipeline."
-  }
 }
 
 variable "lambda_source_code_hash" {
   type     = string
   default  = null
   nullable = true
-
-  validation {
-    condition     = !var.deploy_lambda || (var.lambda_source_code_hash != null && length(trimspace(var.lambda_source_code_hash)) > 0)
-    error_message = "lambda_source_code_hash must be provided by the CI/CD pipeline."
-  }
 }
