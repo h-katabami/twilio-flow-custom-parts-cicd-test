@@ -1,0 +1,108 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - dev2
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ap-northeast-1
+      DEPLOY_ENV: dev
+      TERRAFORM_DIR: infra/terraform/envs/dev
+      ARTIFACT_BUCKET: cicd-state-dev-237710157750
+      TERRAFORM_VERSION: 1.6.6
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::237710157750:role/twilio-flow-custom-parts-cicd-test-dev-gha-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build and upload Lambda artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          BUILD_PREFIX="build/${REPO_NAME}/${DEPLOY_ENV}/lambda/guidance-handler"
+          ARCHIVE_NAME="${GITHUB_SHA}.zip"
+
+          mkdir -p artifacts/package
+          (cd lambdas/GuidanceHandler && zip -r ../../artifacts/package/guidance-handler.zip .)
+
+          aws s3 cp artifacts/package/guidance-handler.zip "s3://${ARTIFACT_BUCKET}/${BUILD_PREFIX}/${ARCHIVE_NAME}"
+
+          HASH=$(openssl dgst -sha256 -binary artifacts/package/guidance-handler.zip | openssl base64 -A)
+
+          {
+            echo "LAMBDA_ARTIFACT_BUCKET=${ARTIFACT_BUCKET}"
+            echo "LAMBDA_ARTIFACT_KEY=${BUILD_PREFIX}/${ARCHIVE_NAME}"
+            echo "LAMBDA_SOURCE_CODE_HASH=${HASH}"
+          } >> "$GITHUB_ENV"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: terraform init -reconfigure
+
+      - name: Terraform fmt check
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: terraform validate
+
+      - name: Terraform plan
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          terraform plan -out=tfplan \
+            -var="deploy_lambda=true" \
+            -var="deploy_frontend=true" \
+            -var="lambda_artifact_bucket=${LAMBDA_ARTIFACT_BUCKET}" \
+            -var="lambda_artifact_key=${LAMBDA_ARTIFACT_KEY}" \
+            -var="lambda_source_code_hash=${LAMBDA_SOURCE_CODE_HASH}"
+          terraform show -no-color tfplan > tfplan.txt
+
+      - name: Upload Terraform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-dev
+          path: |
+            infra/terraform/envs/dev/tfplan
+            infra/terraform/envs/dev/tfplan.txt
+
+      - name: Terraform apply
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          terraform apply -auto-approve \
+            -var="deploy_lambda=true" \
+            -var="deploy_frontend=true" \
+            -var="lambda_artifact_bucket=${LAMBDA_ARTIFACT_BUCKET}" \
+            -var="lambda_artifact_key=${LAMBDA_ARTIFACT_KEY}" \
+            -var="lambda_source_code_hash=${LAMBDA_SOURCE_CODE_HASH}"
+
+      - name: Sync frontend/scenario/gram assets
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          FRONTEND_BUCKET=$(terraform output -raw frontend_bucket_name)
+          aws s3 sync ../../../../front/ "s3://${FRONTEND_BUCKET}/" --delete
+          aws s3 sync ../../../../scenario/ "s3://${FRONTEND_BUCKET}/assets/scenario/"
+          aws s3 sync ../../../../gram/ "s3://${FRONTEND_BUCKET}/assets/gram/"
