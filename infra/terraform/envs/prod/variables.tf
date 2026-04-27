@@ -30,6 +30,16 @@ variable "primary_lambda_key" {
   default = "guidance"
 }
 
+variable "deploy_lambda" {
+  type    = bool
+  default = true
+}
+
+variable "deploy_frontend" {
+  type    = bool
+  default = true
+}
+
 variable "frontend_buckets" {
   type = map(object({
     bucket_name             = string
@@ -50,23 +60,38 @@ variable "lambdas" {
     runtime               = optional(string, "python3.13")
     timeout               = optional(number, 10)
     environment_variables = optional(map(string), {})
-    artifact_bucket       = optional(string)
-    artifact_key          = optional(string)
-    source_code_hash      = optional(string)
   }))
 }
 
 variable "lambda_artifact_bucket" {
-  type    = string
-  default = ""
+  type     = string
+  default  = null
+  nullable = true
+
+  validation {
+    condition     = !var.deploy_lambda || (var.lambda_artifact_bucket != null && length(trimspace(var.lambda_artifact_bucket)) > 0)
+    error_message = "lambda_artifact_bucket must be provided by the CI/CD pipeline."
+  }
 }
 
 variable "lambda_artifact_key" {
-  type    = string
-  default = ""
+  type     = string
+  default  = null
+  nullable = true
+
+  validation {
+    condition     = !var.deploy_lambda || (var.lambda_artifact_key != null && length(trimspace(var.lambda_artifact_key)) > 0)
+    error_message = "lambda_artifact_key must be provided by the CI/CD pipeline."
+  }
 }
 
 variable "lambda_source_code_hash" {
-  type    = string
-  default = ""
+  type     = string
+  default  = null
+  nullable = true
+
+  validation {
+    condition     = !var.deploy_lambda || (var.lambda_source_code_hash != null && length(trimspace(var.lambda_source_code_hash)) > 0)
+    error_message = "lambda_source_code_hash must be provided by the CI/CD pipeline."
+  }
 }
